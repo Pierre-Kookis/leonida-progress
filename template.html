@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leonida progress</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --fg: #1d2128; --muted: #646b76; --line: #d9dde3;
+  --done: #2f9e44; --part: #d99a1c; --block: #d9453b; --none: #c9ced6; --link: #2563c9;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1117; --panel: #11161d; --fg: #e6e9ee; --muted: #8b949e; --line: #262d36;
+    --done: #2ea043; --part: #d29922; --block: #da3633; --none: #2a313a; --link: #58a6ff;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1117; --panel: #11161d; --fg: #e6e9ee; --muted: #8b949e; --line: #262d36;
+  --done: #2ea043; --part: #d29922; --block: #da3633; --none: #2a313a; --link: #58a6ff;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
+header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+h1 { font-size: 26px; margin: 0; }
+.overall { font: 700 24px ui-monospace, Consolas, monospace; }
+.mono { font-family: ui-monospace, Consolas, monospace; }
+.muted { color: var(--muted); font-size: 12.5px; }
+.bigbar { display: flex; gap: 2px; margin: 10px 0 6px; }
+.bigbar i { flex: 1; height: 10px; background: var(--none); }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0 4px; font-size: 12.5px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; cursor: default; user-select: none; }
+.legend b { width: 12px; height: 12px; display: inline-block; border-radius: 2px; }
+.legend .toggle { cursor: pointer; }
+.legend .toggle.off { opacity: .35; }
+section { margin-top: 26px; }
+.sechead { display: flex; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 6px; margin-bottom: 10px; }
+.sechead h2 { font-size: 16px; margin: 0; }
+.sechead .pct { font: 700 15px ui-monospace, Consolas, monospace; }
+.ms { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; }
+.ms div { padding: 8px 10px; border-radius: 3px; background: var(--none); color: var(--fg); cursor: pointer; text-decoration: none; display: block; }
+.ms div b { display: block; font: 700 14px ui-monospace, Consolas, monospace; }
+.ms div small { font-size: 12px; }
+.ms .done { background: var(--done); color: #fff; } .ms .partial { background: var(--part); color: #111; }
+.row { display: grid; grid-template-columns: minmax(180px, 1.1fr) 1.6fr 170px; gap: 12px; align-items: center;
+       padding: 4px 6px; border-radius: 4px; cursor: pointer; }
+.row:hover, .row:focus-visible { background: color-mix(in srgb, var(--fg) 7%, transparent); outline: none; }
+.segs { display: flex; gap: 2px; }
+.segs i { flex: 1; height: 11px; background: var(--none); border-radius: 1px; }
+.val { text-align: right; font: 12.5px ui-monospace, Consolas, monospace; color: var(--muted); white-space: nowrap; }
+.err .val { color: var(--block); }
+.loc { color: var(--link); font-size: 11px; margin-left: 4px; }
+.isa { display: grid; grid-template-columns: repeat(auto-fill, 13px); gap: 2px; margin-top: 8px; }
+.isa i { width: 13px; height: 13px; background: var(--none); border-radius: 1px; }
+.isa i.dim { opacity: .15; } .isa i.hit { outline: 2px solid var(--fg); }
+.isabar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+input[type=search] { background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; padding: 5px 8px; min-width: 220px; }
+#tip { position: fixed; z-index: 10; max-width: 420px; background: var(--panel); color: var(--fg); border: 1px solid var(--line);
+       border-radius: 6px; padding: 8px 10px; font-size: 12.5px; box-shadow: 0 6px 24px rgba(0,0,0,.25); pointer-events: none; display: none; }
+#tip q { display: block; color: var(--muted); margin-top: 4px; font-style: italic; }
+button.theme { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 4px; padding: 2px 8px; cursor: pointer; }
+@media (max-width: 640px) {
+  .row { grid-template-columns: 1fr; gap: 4px; } .val { text-align: left; }
+}
+</style>
+</head>
+<body>
+<main>
+  <header><h1>Leonida progress</h1><div class="overall" id="overall"></div></header>
+  <div class="bigbar" id="bigbar"></div>
+  <div class="muted" id="summary"></div>
+  <div class="muted" id="meta"></div>
+  <div class="legend">
+    <span><b style="background:var(--done)"></b>done</span><span><b style="background:var(--part)"></b>in progress / partial</span>
+    <span><b style="background:var(--block)"></b>blocked</span><span><b style="background:var(--none)"></b>not yet</span>
+    <button class="theme" id="theme" title="Switch light / dark">◐ theme</button>
+  </div>
+  <div id="content"></div>
+</main>
+<div id="tip"></div>
+<script>
+const DATA = /*DATA*/null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : Number(n).toLocaleString("en-US", {maximumFractionDigits: 0});
+const pct = p => (Math.floor(p * 100) / 100).toFixed(2) + "%";
+const color = p => p >= 100 ? "var(--done)" : p <= 0 ? "var(--block)" : "var(--part)";
+const src = (path, line) => `${DATA.github}/blob/${DATA.sha || "main"}/${path}${line ? "#L" + line : ""}`;
+
+// Theme toggle (remembered per viewer when storage works).
+try { const t = localStorage.getItem("leonida-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+$("#theme").onclick = () => {
+  const cur = document.documentElement.dataset.theme ||
+    (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  const next = cur === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("leonida-theme", next); } catch (e) {}
+};
+
+// Tooltip.
+const tip = $("#tip");
+function showTip(e, htmlText) { tip.innerHTML = htmlText; tip.style.display = "block"; moveTip(e); }
+function moveTip(e) {
+  const x = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8), y = Math.min(e.clientY + 14, innerHeight - tip.offsetHeight - 8);
+  tip.style.left = x + "px"; tip.style.top = y + "px";
+}
+function hideTip() { tip.style.display = "none"; }
+function bindTip(el, f) { el.addEventListener("mouseenter", e => showTip(e, f())); el.addEventListener("mousemove", moveTip); el.addEventListener("mouseleave", hideTip); }
+
+const segs = (p, n = 50) => {
+  const full = p <= 0 ? 1 : Math.round(p / 100 * n), c = color(p);   // a 0% row shows one red (blocked) cell
+  return Array.from({length: n}, (_, i) => `<i style="${i < full ? "background:" + c : ""}"></i>`).join("");
+};
+
+function render() {
+  const out = [], areaScores = [];
+  // Milestones: met 1, partly met 0.5, open 0.
+  const ms = DATA.milestones, msScore = ms.length ? 100 * ms.reduce((s, m) => s + (m.state === "done" ? 1 : m.state === "partial" ? .5 : 0), 0) / ms.length : 0;
+  areaScores.push([DATA.milestone_area, msScore]);
+  out.push(`<section><div class="sechead"><h2>${esc(DATA.milestone_area)}</h2><span class="pct">${pct(msScore)}</span></div><div class="ms">` +
+    ms.map((m, i) => `<div class="${m.state}" data-ms="${i}" tabindex="0"><b>${esc(m.id)}</b><small>${m.state === "done" ? "met" : m.state === "partial" ? "partly met" : "open"}</small></div>`).join("") +
+    `</div><div class="muted" style="margin-top:6px">A milestone counts as met when its row in <span class="mono">${esc(DATA.milestones_path)}</span> §6 says so (synthetic parts included). Hover for the scope, click for the source.</div></section>`);
+
+  DATA.areas.forEach((a, ai) => {
+    const ok = a.rows.filter(r => !r.error), score = ok.length ? ok.reduce((s, r) => s + Math.min(100, r.p), 0) / ok.length : 0;
+    areaScores.push([a.name, score]);
+    out.push(`<section><div class="sechead"><h2>${esc(a.name)}</h2><span class="pct">${pct(score)}</span></div>` +
+      a.rows.map((r, ri) => {
+        const v = r.error ? "source not found" :
+          (r.n != null ? `${pct(r.p)} ${fmt(r.n)}/${fmt(r.d)}` : pct(r.p)) + (r.local ? " ⌂" : "");
+        return `<div class="row${r.error ? " err" : ""}" data-a="${ai}" data-r="${ri}" tabindex="0"><span>${esc(r.label)}</span>` +
+          `<span class="segs">${r.error ? segs(0).replace(/background:[^"]*/g, "") : segs(r.p)}</span><span class="val">${v}</span></div>`;
+      }).join("") + `</section>`);
+  });
+
+  const isa = DATA.isa;
+  if (isa) {
+    const t = isa.totals, total = isa.cells.length, handled = t["handled-exact"] + t["handled-family"];
+    const cols = {"handled-exact": "var(--done)", "handled-family": "var(--part)", "refused": "var(--block)", "unknown": "var(--none)"};
+    out.push(`<section><div class="sechead"><h2>RDNA2 ISA: ${fmt(handled)} of ${fmt(total)} instructions have a translator rule</h2><span class="pct">${pct(100 * handled / total)}</span></div>` +
+      `<div class="muted">From <span class="mono">${esc(isa.source)}</span>. “handled-family” is an upper bound (a prefix rule). Click a class to hide or show it.</div>` +
+      `<div class="isabar legend">` + Object.keys(cols).map(c => `<span class="toggle" data-cls="${c}"><b style="background:${cols[c]}"></b>${c} ${fmt(t[c])}</span>`).join("") +
+      (isa.cells[0] && isa.cells[0].name ? `<input type="search" id="isaq" placeholder="find an instruction (e.g. v_dot4)">` : `<span>run with --isa for instruction names</span>`) + `</div>` +
+      `<div class="isa" id="isagrid">` + isa.cells.map((c, i) => `<i data-i="${i}" data-cls="${c.cls}" style="background:${cols[c.cls]}"></i>`).join("") + `</div></section>`);
+  }
+  $("#content").innerHTML = out.join("");
+
+  const overall = areaScores.reduce((s, a) => s + a[1], 0) / areaScores.length;
+  $("#overall").textContent = "Overall " + pct(overall);
+  $("#bigbar").innerHTML = segs(overall, 60).replace(/var\(--(done|block)\)/g, "var(--part)");
+  $("#summary").innerHTML = areaScores.map(a => `${esc(a[0])} ${pct(a[1])}`).join(" · ") +
+    "<br>Overall = average of the areas; an area = average of its rows (milestones: met 1, partly 0.5, open 0). Hover a row for its source; click to open it.";
+  $("#meta").innerHTML = `Read from <a href="${DATA.github}/commit/${esc(DATA.sha)}" style="color:var(--link)" class="mono">${esc((DATA.sha || "?").slice(0, 8))}</a> (${esc(DATA.date)}), generated ${esc(DATA.generated)}. ` +
+    `Counts are quoted from docs/; ⌂ marks a local measurement. Nothing of the game is in this file.`;
+
+  document.querySelectorAll("[data-ms]").forEach(el => {
+    const m = ms[+el.dataset.ms];
+    bindTip(el, () => `<b>${esc(m.id)}</b> — ${m.state === "done" ? "met" : m.state === "partial" ? "partly met" : "open"}<q>${esc(m.scope)}</q><div class="loc">${esc(DATA.milestones_path)}:${m.line}</div>`);
+    el.onclick = () => open(src(DATA.milestones_path, m.line), "_blank", "noopener");
+  });
+  document.querySelectorAll(".row").forEach(el => {
+    const r = DATA.areas[+el.dataset.a].rows[+el.dataset.r];
+    bindTip(el, () => `<b>${esc(r.label)}</b>` + (r.error ? `<div style="color:var(--block)">${esc(r.error)}</div>` : "") +
+      (r.local ? `<div>Local measurement: ${esc(r.local)}</div>` : "") +
+      (r.quote ? `<q>${esc(r.quote)}</q>` : "") + `<div class="loc">${esc(r.path)}${r.line ? ":" + r.line : ""}</div>`);
+    el.onclick = () => open(src(r.path, r.line), "_blank", "noopener");
+    el.onkeydown = e => { if (e.key === "Enter") el.click(); };
+  });
+  if (isa) {
+    const grid = $("#isagrid"), hidden = new Set();
+    grid.addEventListener("mouseover", e => {
+      const i = e.target.dataset.i; if (i == null) return;
+      const c = isa.cells[+i]; showTip(e, `${c.name ? "<b class='mono'>" + esc(c.name) + "</b><br>" : ""}${esc(c.cls)}`);
+    });
+    grid.addEventListener("mousemove", e => { if (e.target.dataset.i != null) moveTip(e); });
+    grid.addEventListener("mouseleave", hideTip);
+    const apply = () => {
+      const q = ($("#isaq") || {}).value?.trim().toLowerCase() || "";
+      grid.querySelectorAll("i").forEach(el => {
+        const c = isa.cells[+el.dataset.i];
+        el.classList.toggle("dim", hidden.has(c.cls) || (q && !(c.name || "").includes(q)));
+        el.classList.toggle("hit", !!q && (c.name || "").includes(q));
+      });
+    };
+    document.querySelectorAll(".toggle").forEach(el => el.onclick = () => {
+      const c = el.dataset.cls; hidden.has(c) ? hidden.delete(c) : hidden.add(c); el.classList.toggle("off"); apply();
+    });
+    if ($("#isaq")) $("#isaq").oninput = apply;
+  }
+}
+render();
+</script>
+</body>
+</html>

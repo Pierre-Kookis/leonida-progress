@@ -22,6 +22,7 @@
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
 main { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
+a { color: var(--link); }
 header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 h1 { font-size: 26px; margin: 0; }
 .overall { font: 700 24px ui-monospace, Consolas, monospace; }
@@ -29,37 +30,43 @@ h1 { font-size: 26px; margin: 0; }
 .muted { color: var(--muted); font-size: 12.5px; }
 .bigbar { display: flex; gap: 2px; margin: 10px 0 6px; }
 .bigbar i { flex: 1; height: 10px; background: var(--none); }
-.legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0 4px; font-size: 12.5px; color: var(--muted); }
-.legend span { display: inline-flex; align-items: center; gap: 6px; cursor: default; user-select: none; }
+.live { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; margin: 6px 0 2px; color: var(--muted); }
+.live .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--none); }
+.live.ok .dot { background: var(--done); } .live.busy .dot { background: var(--part); animation: pulse 1s infinite; }
+.live.fail .dot { background: var(--block); }
+@keyframes pulse { 50% { opacity: .3; } }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin: 10px 0 4px; font-size: 12.5px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; user-select: none; }
 .legend b { width: 12px; height: 12px; display: inline-block; border-radius: 2px; }
 .legend .toggle { cursor: pointer; }
 .legend .toggle.off { opacity: .35; }
 section { margin-top: 26px; }
-.sechead { display: flex; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 6px; margin-bottom: 10px; }
+.sechead { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--line); padding-bottom: 6px; margin-bottom: 10px; }
 .sechead h2 { font-size: 16px; margin: 0; }
 .sechead .pct { font: 700 15px ui-monospace, Consolas, monospace; }
 .ms { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; }
-.ms div { padding: 8px 10px; border-radius: 3px; background: var(--none); color: var(--fg); cursor: pointer; text-decoration: none; display: block; }
+.ms div { padding: 8px 10px; border-radius: 3px; background: var(--none); color: var(--fg); cursor: pointer; }
 .ms div b { display: block; font: 700 14px ui-monospace, Consolas, monospace; }
 .ms div small { font-size: 12px; }
 .ms .done { background: var(--done); color: #fff; } .ms .partial { background: var(--part); color: #111; }
 .row { display: grid; grid-template-columns: minmax(180px, 1.1fr) 1.6fr 170px; gap: 12px; align-items: center;
        padding: 4px 6px; border-radius: 4px; cursor: pointer; }
 .row:hover, .row:focus-visible { background: color-mix(in srgb, var(--fg) 7%, transparent); outline: none; }
+.row.changed .val { color: var(--link); font-weight: 600; }
 .segs { display: flex; gap: 2px; }
 .segs i { flex: 1; height: 11px; background: var(--none); border-radius: 1px; }
 .val { text-align: right; font: 12.5px ui-monospace, Consolas, monospace; color: var(--muted); white-space: nowrap; }
 .err .val { color: var(--block); }
-.loc { color: var(--link); font-size: 11px; margin-left: 4px; }
+.loc { color: var(--link); font-size: 11px; }
 .isa { display: grid; grid-template-columns: repeat(auto-fill, 13px); gap: 2px; margin-top: 8px; }
 .isa i { width: 13px; height: 13px; background: var(--none); border-radius: 1px; }
 .isa i.dim { opacity: .15; } .isa i.hit { outline: 2px solid var(--fg); }
-.isabar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
 input[type=search] { background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; padding: 5px 8px; min-width: 220px; }
 #tip { position: fixed; z-index: 10; max-width: 420px; background: var(--panel); color: var(--fg); border: 1px solid var(--line);
        border-radius: 6px; padding: 8px 10px; font-size: 12.5px; box-shadow: 0 6px 24px rgba(0,0,0,.25); pointer-events: none; display: none; }
 #tip q { display: block; color: var(--muted); margin-top: 4px; font-style: italic; }
-button.theme { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 4px; padding: 2px 8px; cursor: pointer; }
+button { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 4px; padding: 2px 8px; cursor: pointer; font: inherit; }
+footer { margin-top: 36px; }
 @media (max-width: 640px) {
   .row { grid-template-columns: 1fr; gap: 4px; } .val { text-align: left; }
 }
@@ -69,80 +76,186 @@ button.theme { background: none; border: 1px solid var(--line); color: var(--mut
 <main>
   <header><h1>Leonida progress</h1><div class="overall" id="overall"></div></header>
   <div class="bigbar" id="bigbar"></div>
+  <div class="live" id="live"><span class="dot"></span><span id="livetext"></span> <button id="refresh" title="Read Leonida's docs again">↻ refresh</button></div>
   <div class="muted" id="summary"></div>
-  <div class="muted" id="meta"></div>
   <div class="legend">
     <span><b style="background:var(--done)"></b>done</span><span><b style="background:var(--part)"></b>in progress / partial</span>
     <span><b style="background:var(--block)"></b>blocked</span><span><b style="background:var(--none)"></b>not yet</span>
-    <button class="theme" id="theme" title="Switch light / dark">◐ theme</button>
+    <button id="theme" title="Switch light / dark">◐ theme</button>
   </div>
   <div id="content"></div>
+  <footer class="muted" id="foot"></footer>
 </main>
 <div id="tip"></div>
 <script>
-const DATA = /*DATA*/null;
+const SPEC = /*SPEC*/null;
+const SNAPSHOT = /*DATA*/null;
+let DATA = SNAPSHOT;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
 const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : Number(n).toLocaleString("en-US", {maximumFractionDigits: 0});
 const pct = p => (Math.floor(p * 100) / 100).toFixed(2) + "%";
 const color = p => p >= 100 ? "var(--done)" : p <= 0 ? "var(--block)" : "var(--part)";
-const src = (path, line) => `${DATA.github}/blob/${DATA.sha || "main"}/${path}${line ? "#L" + line : ""}`;
+const src = (path, line) => `${SPEC.github}/blob/${DATA.sha || "main"}/${path}${line ? "#L" + line : ""}`;
+const CLASS_ORDER = ["handled-exact", "handled-family", "refused", "unknown"];
 
-// Theme toggle (remembered per viewer when storage works).
+// ---- The extraction rules, the same as progress.py ----
+const num = s => parseFloat(String(s).replace(/,/g, ""));
+const jsRe = (pattern, flags) => new RegExp(pattern.replace(/\(\?P</g, "(?<"), flags);
+const lineOf = (text, pos) => text.slice(0, pos).split("\n").length;
+function tableRows(text, head) {
+  const out = []; let on = false;
+  for (const ln of text.split(/\r?\n/)) {
+    if (ln.startsWith(head)) { on = true; continue; }
+    if (!on) continue;
+    if (!ln.startsWith("|")) break;
+    if (/^[\s|:-]*$/.test(ln)) continue;
+    out.push(ln.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim()));
+  }
+  return out;
+}
+function measure(text, row) {
+  const path = row.path;
+  if (row.table) {
+    const rows = tableRows(text, row.table);
+    if (!rows.length) return {error: "table not found (the doc changed)", path};
+    const n = rows.filter(r => r[r.length - 1] === row.match).length;
+    return {n, d: rows.length, p: 100 * n / rows.length, path, line: null,
+            quote: `${n} of ${rows.length} rows of the table “${row.table}” end in “${row.match}”`};
+  }
+  if (row.absent) {
+    const n = text.includes(row.absent) ? 0 : 1;
+    return {n, d: 1, p: 100 * n, path, line: null, quote: `“${row.absent}” is ${n ? "no longer in" : "in"} the doc`};
+  }
+  const m = jsRe(row.regex, "s").exec(text);
+  if (!m) return {error: "pattern not found (the doc changed)", path};
+  const g = m.groups || {};
+  const base = {path, line: lineOf(text, m.index), quote: m[0].replace(/\s+/g, " ").slice(0, 220)};
+  if (g.p) return {...base, n: null, d: null, p: parseFloat(g.p)};
+  const d = g.d ? num(g.d) : num(g.n);
+  const n = g.f ? d - num(g.f) : (g.n ? num(g.n) : d);
+  return {...base, n, d, p: d ? 100 * n / d : 0};
+}
+function milestones(text) {
+  const out = [], re = /^\| \*\*(M[\d.]+)\*\* \| ([^|]*) \|[^\n]*$/gm;
+  let m;
+  while ((m = re.exec(text))) {
+    const cells = m[0].split(/(?<!\\)\|/), done = cells[cells.length - 2];
+    const state = /partly met/i.test(done) ? "partial" : /\bmet\b/i.test(done) ? "done" : "open";
+    out.push({id: m[1], scope: m[2].replace(/[`*]/g, "").trim().slice(0, 180), state, line: lineOf(text, m.index)});
+  }
+  return out;
+}
+function isaFromDoc(text) {
+  const m = jsRe(SPEC.isa_doc.regex, "s").exec(text);
+  if (!m) return null;
+  const t = {}; CLASS_ORDER.forEach((c, i) => t[c] = parseInt(m[i + 2]));
+  return {source: SPEC.isa_doc.path, from_xml: false, totals: t, line: lineOf(text, m.index),
+          cells: CLASS_ORDER.flatMap(c => Array.from({length: t[c]}, () => ({name: null, cls: c})))};
+}
+
+// ---- Live update: read the docs from Leonida's main branch ----
+function setLive(state, html) { $("#live").className = "live " + state; $("#livetext").innerHTML = html; }
+async function liveUpdate(force) {
+  setLive("busy", "Reading Leonida’s docs on GitHub…");
+  try {
+    let sha = null, date = null;
+    try {
+      const r = await fetch(SPEC.api_commit, {headers: {Accept: "application/vnd.github+json"}, cache: "no-store"});
+      if (r.ok) { const c = (await r.json())[0]; sha = c.sha; date = (c.commit.committer || c.commit.author).date.slice(0, 10); }
+    } catch (e) { /* the API is rate-limited (60 requests an hour per address); fall back to the branch name */ }
+    if (sha && sha === SNAPSHOT.sha && !force) {
+      DATA = SNAPSHOT; render();
+      setLive("ok", `Up to date with Leonida main <a class="mono" href="${SPEC.github}/commit/${sha}">${sha.slice(0, 8)}</a> (${esc(date)}).`);
+      return;
+    }
+    const ref = sha || "main";
+    const paths = [...new Set([SPEC.milestones.path, SPEC.isa_doc.path, ...SPEC.rows.map(r => r.path)])];
+    const texts = {};
+    await Promise.all(paths.map(async p => {
+      const r = await fetch(`${SPEC.raw}/${ref}/${p}`, {cache: "no-store"});
+      if (!r.ok) throw new Error(`${p}: HTTP ${r.status}`);
+      texts[p] = await r.text();
+    }));
+    const old = new Map(SNAPSHOT.rows.map(r => [r.label, r]));
+    const rows = SPEC.rows.map(row => {
+      const prev = old.get(row.label);
+      if (prev && prev.local) return prev;   // a local measurement stays
+      const r = {...measure(texts[row.path], row), label: row.label, area: row.area};
+      r.changed = prev && !prev.error && !r.error && Math.abs(prev.p - r.p) > 1e-9;
+      return r;
+    });
+    const isa = SNAPSHOT.isa && SNAPSHOT.isa.from_xml ? SNAPSHOT.isa : (isaFromDoc(texts[SPEC.isa_doc.path]) || SNAPSHOT.isa);
+    DATA = {...SNAPSHOT, sha: sha || SNAPSHOT.sha, date: date || "main", rows, isa,
+            milestones: milestones(texts[SPEC.milestones.path]), live: true};
+    render();
+    const changed = rows.filter(r => r.changed).length;
+    setLive("ok", `Live from Leonida main ${sha ? `<a class="mono" href="${SPEC.github}/commit/${sha}">${sha.slice(0, 8)}</a> (${esc(date)})` : "(latest)"}` +
+      `, read ${new Date().toLocaleTimeString()}.` + (changed ? ` ${changed} row(s) changed since the snapshot (in blue).` : ""));
+  } catch (e) {
+    DATA = SNAPSHOT; render();
+    setLive("fail", `Could not read GitHub (${esc(e.message)}); showing the snapshot from ${esc((SNAPSHOT.sha || "?").slice(0, 8))}.`);
+  }
+}
+
+// ---- Rendering ----
 try { const t = localStorage.getItem("leonida-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
 $("#theme").onclick = () => {
-  const cur = document.documentElement.dataset.theme ||
-    (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
   const next = cur === "dark" ? "light" : "dark";
   document.documentElement.dataset.theme = next;
   try { localStorage.setItem("leonida-theme", next); } catch (e) {}
 };
+$("#refresh").onclick = () => liveUpdate(true);
 
-// Tooltip.
 const tip = $("#tip");
-function showTip(e, htmlText) { tip.innerHTML = htmlText; tip.style.display = "block"; moveTip(e); }
+function showTip(e, h) { tip.innerHTML = h; tip.style.display = "block"; moveTip(e); }
 function moveTip(e) {
-  const x = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8), y = Math.min(e.clientY + 14, innerHeight - tip.offsetHeight - 8);
-  tip.style.left = x + "px"; tip.style.top = y + "px";
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8) + "px";
+  tip.style.top = Math.min(e.clientY + 14, innerHeight - tip.offsetHeight - 8) + "px";
 }
 function hideTip() { tip.style.display = "none"; }
 function bindTip(el, f) { el.addEventListener("mouseenter", e => showTip(e, f())); el.addEventListener("mousemove", moveTip); el.addEventListener("mouseleave", hideTip); }
-
 const segs = (p, n = 50) => {
   const full = p <= 0 ? 1 : Math.round(p / 100 * n), c = color(p);   // a 0% row shows one red (blocked) cell
   return Array.from({length: n}, (_, i) => `<i style="${i < full ? "background:" + c : ""}"></i>`).join("");
 };
+const stateName = s => s === "done" ? "met" : s === "partial" ? "partly met" : "open";
 
 function render() {
-  const out = [], areaScores = [];
-  // Milestones: met 1, partly met 0.5, open 0.
-  const ms = DATA.milestones, msScore = ms.length ? 100 * ms.reduce((s, m) => s + (m.state === "done" ? 1 : m.state === "partial" ? .5 : 0), 0) / ms.length : 0;
-  areaScores.push([DATA.milestone_area, msScore]);
-  out.push(`<section><div class="sechead"><h2>${esc(DATA.milestone_area)}</h2><span class="pct">${pct(msScore)}</span></div><div class="ms">` +
-    ms.map((m, i) => `<div class="${m.state}" data-ms="${i}" tabindex="0"><b>${esc(m.id)}</b><small>${m.state === "done" ? "met" : m.state === "partial" ? "partly met" : "open"}</small></div>`).join("") +
-    `</div><div class="muted" style="margin-top:6px">A milestone counts as met when its row in <span class="mono">${esc(DATA.milestones_path)}</span> §6 says so (synthetic parts included). Hover for the scope, click for the source.</div></section>`);
+  hideTip();
+  const out = [], areaScores = [], ms = DATA.milestones;
+  const msScore = ms.length ? 100 * ms.reduce((s, m) => s + (m.state === "done" ? 1 : m.state === "partial" ? .5 : 0), 0) / ms.length : 0;
+  areaScores.push([SPEC.milestones.area, msScore]);
+  out.push(`<section><div class="sechead"><h2>${esc(SPEC.milestones.area)}</h2><span class="pct">${pct(msScore)}</span></div><div class="ms">` +
+    ms.map((m, i) => `<div class="${m.state}" data-ms="${i}" tabindex="0"><b>${esc(m.id)}</b><small>${stateName(m.state)}</small></div>`).join("") +
+    `</div><div class="muted" style="margin-top:6px">A milestone counts as met when its row in <span class="mono">${esc(SPEC.milestones.path)}</span> §6 says so (synthetic parts included).</div></section>`);
 
-  DATA.areas.forEach((a, ai) => {
-    const ok = a.rows.filter(r => !r.error), score = ok.length ? ok.reduce((s, r) => s + Math.min(100, r.p), 0) / ok.length : 0;
+  const areas = [];
+  DATA.rows.forEach((r, i) => { let a = areas.find(x => x.name === r.area); if (!a) areas.push(a = {name: r.area, rows: []}); a.rows.push(i); });
+  for (const a of areas) {
+    const ok = a.rows.map(i => DATA.rows[i]).filter(r => !r.error);
+    const score = ok.length ? ok.reduce((s, r) => s + Math.min(100, r.p), 0) / ok.length : 0;
     areaScores.push([a.name, score]);
     out.push(`<section><div class="sechead"><h2>${esc(a.name)}</h2><span class="pct">${pct(score)}</span></div>` +
-      a.rows.map((r, ri) => {
-        const v = r.error ? "source not found" :
-          (r.n != null ? `${pct(r.p)} ${fmt(r.n)}/${fmt(r.d)}` : pct(r.p)) + (r.local ? " ⌂" : "");
-        return `<div class="row${r.error ? " err" : ""}" data-a="${ai}" data-r="${ri}" tabindex="0"><span>${esc(r.label)}</span>` +
-          `<span class="segs">${r.error ? segs(0).replace(/background:[^"]*/g, "") : segs(r.p)}</span><span class="val">${v}</span></div>`;
+      a.rows.map(i => {
+        const r = DATA.rows[i];
+        const v = r.error ? "source not found" : (r.n != null ? `${pct(r.p)} ${fmt(r.n)}/${fmt(r.d)}` : pct(r.p)) + (r.local ? " ⌂" : "");
+        return `<div class="row${r.error ? " err" : ""}${r.changed ? " changed" : ""}" data-r="${i}" tabindex="0"><span>${esc(r.label)}</span>` +
+          `<span class="segs">${r.error ? segs(100).replace(/background:[^"]*/g, "") : segs(r.p)}</span><span class="val">${v}</span></div>`;
       }).join("") + `</section>`);
-  });
+  }
 
   const isa = DATA.isa;
   if (isa) {
     const t = isa.totals, total = isa.cells.length, handled = t["handled-exact"] + t["handled-family"];
     const cols = {"handled-exact": "var(--done)", "handled-family": "var(--part)", "refused": "var(--block)", "unknown": "var(--none)"};
+    const when = isa.from_xml ? ` at Leonida <span class="mono">${esc((DATA.isa_sha || "").slice(0, 8))}</span> (refreshed when the site is rebuilt)` : "";
     out.push(`<section><div class="sechead"><h2>RDNA2 ISA: ${fmt(handled)} of ${fmt(total)} instructions have a translator rule</h2><span class="pct">${pct(100 * handled / total)}</span></div>` +
-      `<div class="muted">From <span class="mono">${esc(isa.source)}</span>. “handled-family” is an upper bound (a prefix rule). Click a class to hide or show it.</div>` +
-      `<div class="isabar legend">` + Object.keys(cols).map(c => `<span class="toggle" data-cls="${c}"><b style="background:${cols[c]}"></b>${c} ${fmt(t[c])}</span>`).join("") +
-      (isa.cells[0] && isa.cells[0].name ? `<input type="search" id="isaq" placeholder="find an instruction (e.g. v_dot4)">` : `<span>run with --isa for instruction names</span>`) + `</div>` +
-      `<div class="isa" id="isagrid">` + isa.cells.map((c, i) => `<i data-i="${i}" data-cls="${c.cls}" style="background:${cols[c.cls]}"></i>`).join("") + `</div></section>`);
+      `<div class="muted">From <span class="mono">${esc(isa.source)}</span>${when}. “handled-family” is an upper bound (a prefix rule). Click a class to hide or show it.</div>` +
+      `<div class="legend">` + Object.keys(cols).map(c => `<span class="toggle" data-cls="${c}"><b style="background:${cols[c]}"></b>${c} ${fmt(t[c])}</span>`).join("") +
+      (isa.cells[0] && isa.cells[0].name ? `<input type="search" id="isaq" placeholder="find an instruction (e.g. v_dot4)">` : `<span>names need AMD’s XML (see the README)</span>`) + `</div>` +
+      `<div class="isa" id="isagrid">` + isa.cells.map((c, i) => `<i data-i="${i}" style="background:${cols[c.cls]}"></i>`).join("") + `</div></section>`);
   }
   $("#content").innerHTML = out.join("");
 
@@ -151,18 +264,19 @@ function render() {
   $("#bigbar").innerHTML = segs(overall, 60).replace(/var\(--(done|block)\)/g, "var(--part)");
   $("#summary").innerHTML = areaScores.map(a => `${esc(a[0])} ${pct(a[1])}`).join(" · ") +
     "<br>Overall = average of the areas; an area = average of its rows (milestones: met 1, partly 0.5, open 0). Hover a row for its source; click to open it.";
-  $("#meta").innerHTML = `Read from <a href="${DATA.github}/commit/${esc(DATA.sha)}" style="color:var(--link)" class="mono">${esc((DATA.sha || "?").slice(0, 8))}</a> (${esc(DATA.date)}), generated ${esc(DATA.generated)}. ` +
-    `Counts are quoted from docs/; ⌂ marks a local measurement. Nothing of the game is in this file.`;
+  $("#foot").innerHTML = `Snapshot built ${esc(SNAPSHOT.generated)} from Leonida <span class="mono">${esc((SNAPSHOT.sha || "?").slice(0, 8))}</span>; ` +
+    `the page then reads the same docs from GitHub when it opens. Counts are quoted from Leonida’s docs/; ⌂ marks a local measurement. ` +
+    `Nothing of the game is in this page. <a href="https://github.com/Pierre-Kookis/leonida-progress">Source</a>.`;
 
   document.querySelectorAll("[data-ms]").forEach(el => {
     const m = ms[+el.dataset.ms];
-    bindTip(el, () => `<b>${esc(m.id)}</b> — ${m.state === "done" ? "met" : m.state === "partial" ? "partly met" : "open"}<q>${esc(m.scope)}</q><div class="loc">${esc(DATA.milestones_path)}:${m.line}</div>`);
-    el.onclick = () => open(src(DATA.milestones_path, m.line), "_blank", "noopener");
+    bindTip(el, () => `<b>${esc(m.id)}</b> — ${stateName(m.state)}<q>${esc(m.scope)}</q><div class="loc">${esc(SPEC.milestones.path)}:${m.line}</div>`);
+    el.onclick = () => open(src(SPEC.milestones.path, m.line), "_blank", "noopener");
   });
   document.querySelectorAll(".row").forEach(el => {
-    const r = DATA.areas[+el.dataset.a].rows[+el.dataset.r];
+    const r = DATA.rows[+el.dataset.r];
     bindTip(el, () => `<b>${esc(r.label)}</b>` + (r.error ? `<div style="color:var(--block)">${esc(r.error)}</div>` : "") +
-      (r.local ? `<div>Local measurement: ${esc(r.local)}</div>` : "") +
+      (r.local ? `<div>Local measurement: ${esc(r.local)}</div>` : "") + (r.changed ? `<div style="color:var(--link)">Changed since the snapshot</div>` : "") +
       (r.quote ? `<q>${esc(r.quote)}</q>` : "") + `<div class="loc">${esc(r.path)}${r.line ? ":" + r.line : ""}</div>`);
     el.onclick = () => open(src(r.path, r.line), "_blank", "noopener");
     el.onkeydown = e => { if (e.key === "Enter") el.click(); };
@@ -176,11 +290,11 @@ function render() {
     grid.addEventListener("mousemove", e => { if (e.target.dataset.i != null) moveTip(e); });
     grid.addEventListener("mouseleave", hideTip);
     const apply = () => {
-      const q = ($("#isaq") || {}).value?.trim().toLowerCase() || "";
+      const q = (($("#isaq") || {}).value || "").trim().toLowerCase();
       grid.querySelectorAll("i").forEach(el => {
-        const c = isa.cells[+el.dataset.i];
-        el.classList.toggle("dim", hidden.has(c.cls) || (q && !(c.name || "").includes(q)));
-        el.classList.toggle("hit", !!q && (c.name || "").includes(q));
+        const c = isa.cells[+el.dataset.i], hit = !!q && (c.name || "").includes(q);
+        el.classList.toggle("dim", hidden.has(c.cls) || (!!q && !hit));
+        el.classList.toggle("hit", hit);
       });
     };
     document.querySelectorAll(".toggle").forEach(el => el.onclick = () => {
@@ -190,6 +304,7 @@ function render() {
   }
 }
 render();
+liveUpdate(false);
 </script>
 </body>
 </html>

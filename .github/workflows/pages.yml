@@ -1,0 +1,64 @@
+# Builds the progress page from Leonida's main branch and publishes it on GitHub Pages.
+# Runs on every push here, every 6 hours, and by hand (Actions > Pages > Run workflow).
+# The page also reads Leonida's docs again when someone opens it; this rebuild refreshes the snapshot and the
+# per-instruction ISA grid, which needs AMD's XML and Python.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check out Leonida (main)
+        uses: actions/checkout@v4
+        with:
+          repository: ItsNotRexed/Leonida
+          path: leonida
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Get AMD's RDNA2 ISA XML (MIT licence, GPUOpen)
+        id: isa
+        continue-on-error: true
+        run: |
+          curl -fsSL -o isa.zip https://gpuopen.com/download/machine-readable-isa/latest/
+          unzip -o isa.zip amdgpu_isa_rdna2.xml
+          echo "arg=--isa amdgpu_isa_rdna2.xml" >> "$GITHUB_OUTPUT"
+
+      - name: Build the page
+        run: python -I progress.py --repo leonida ${{ steps.isa.outputs.arg }} --out site/index.html
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

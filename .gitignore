@@ -1,6 +1,7 @@
-# Generated page and local inputs
+﻿# Generated page and local inputs
 progress.html
 *.xml
 *.zip
 local*.json
 __pycache__/
+site/

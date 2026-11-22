@@ -1,11 +1,25 @@
 # leonida-progress
 
-A progress page for [Leonida](https://github.com/ItsNotRexed/Leonida), rebuilt from a Leonida checkout instead of
-typed by hand. One self-contained HTML file: no server, no external scripts.
+**Live page: https://pierre-kookis.github.io/leonida-progress/**
+
+A progress page for [Leonida](https://github.com/ItsNotRexed/Leonida), rebuilt from Leonida's docs instead of typed
+by hand. One self-contained HTML file: no server, no external scripts.
+
+## How it stays current
+
+- **When the page opens**, it asks GitHub for Leonida's latest `main` commit. If it is newer than the snapshot in
+  the page, it reads the same docs from `raw.githubusercontent.com` and applies the same rules (`rows.json`) in
+  the browser. Rows that changed since the snapshot turn blue. The ↻ button reads them again. If GitHub cannot be
+  reached (offline, or the API's 60 requests an hour per address), the page shows its snapshot and says so.
+- **The GitHub Actions workflow** (`.github/workflows/pages.yml`) rebuilds the page from Leonida's `main` every
+  6 hours, on every push here and by hand, and publishes it on GitHub Pages. That rebuild also refreshes the
+  per-instruction ISA grid, which needs AMD's XML and Python, so it is the one part that does not update in the
+  browser.
+
+## What it shows
 
 - **Boot milestones** M0–M7, read from `docs/d3d12_vulkan.md` §6.
-- **Shader translator, runtime loader, assets**: each row is a regex over a file in `docs/` (see `ROWS` in
-  `progress.py`). Hover a row to see the file, line and sentence the number comes from; click to open that line on
+- **Shader translator, runtime loader, assets**: each row is a rule over a file in `docs/` (see `rows.json`). Hover a row to see the file, line and sentence the number comes from; click to open that line on
   GitHub at the commit it was read from. A row whose sentence changed shows "source not found" instead of a stale value.
 - **RDNA2 ISA grid**: one cell per instruction, from Leonida's `tools/isa_coverage.py` run on AMD's
   machine-readable ISA XML. Search an instruction, hide or show a class from the legend. Without the XML, the grid
@@ -21,6 +35,8 @@ Python 3.9+, standard library only.
 git clone https://github.com/ItsNotRexed/Leonida
 python -I progress.py --repo Leonida --out progress.html
 ```
+
+Opened from disk, the page still updates itself from GitHub when the browser allows it.
 
 For the per-instruction ISA grid, get AMD's XML (MIT licence) from
 [GPUOpen](https://gpuopen.com/machine-readable-isa) and pass it:
@@ -43,9 +59,15 @@ Options:
 
 ## Adding a row
 
-Add an entry to `ROWS` in `progress.py`: the area, the label, and a `Src(path, regex)` whose named groups give
-`n` and `d` (a count out of a total), `f` and `d` (failures out of a total) or `p` (a percentage). Run with `--json`
-to check what it extracts.
+Add an entry to `rows.json` with its `area`, `label` and `path`, and one rule:
+
+- `regex`: named groups give `n` and `d` (a count out of a total), `f` and `d` (failures out of a total) or `p`
+  (a percentage). Write Python syntax (`(?P<n>...)`); the page converts it for the browser.
+- `table` + `match`: counts the rows of the markdown table whose header starts with `table` whose last cell is `match`.
+- `absent`: 1/1 when the text is no longer in the doc, 0/1 while it is.
+
+Run `python -I progress.py --repo Leonida --json` to check what it extracts. `progress.py` and the script in
+`template.html` apply the same rules; change both together.
 
 ## No game data
 
